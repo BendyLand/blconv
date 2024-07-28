@@ -1,5 +1,6 @@
 extern crate image;
 
+use crate::utils;
 use std::fmt;
 use std::error::Error;
 
@@ -18,8 +19,7 @@ impl Error for UnsupportedFormatError {}
 
 pub fn convert_image(file: String, target: String) -> Result<(), Box<dyn std::error::Error>> {
     let img = image::open(&file)?;
-    let idx = file.chars().position(|x| x == '.').unwrap_or(file.len()-1);
-    let new_path = file[0..idx].to_string();
+    let new_path = utils::extract_file_name(file);
     let new_file = format!("{}.{}", &new_path, target);
     match target.to_lowercase().as_str() {
         "jpg" | "jpeg" => {
