@@ -1,7 +1,5 @@
 extern crate image;
 
-use image::{error::UnsupportedError, GenericImageView};
-use std::path::Path;
 use std::fmt;
 use std::error::Error;
 
@@ -12,13 +10,11 @@ struct UnsupportedFormatError {
 
 impl fmt::Display for UnsupportedFormatError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Unsupported output format: {}", self.format)
+        return write!(f, "Unsupported target format: {}", self.format);
     }
 }
 
 impl Error for UnsupportedFormatError {}
-
-
 
 pub fn convert_image(file: String, target: String) -> Result<(), Box<dyn std::error::Error>> {
     let img = image::open(&file)?;
@@ -26,10 +22,15 @@ pub fn convert_image(file: String, target: String) -> Result<(), Box<dyn std::er
     let new_path = file[0..idx].to_string();
     let new_file = format!("{}.{}", &new_path, target);
     match target.to_lowercase().as_str() {
-        "jpg" | "jpeg" => img.save_with_format(new_file, image::ImageFormat::Jpeg)?,
-        "png" => img.save_with_format(new_file, image::ImageFormat::Png)?,
+        "jpg" | "jpeg" => {
+            img.save_with_format(new_file, image::ImageFormat::Jpeg)?;
+            println!("Image converted successfully!");
+        },
+        "png" => {
+            img.save_with_format(new_file, image::ImageFormat::Png)?;
+            println!("Image converted successfully!");
+        },
         _ => return Err(Box::new(UnsupportedFormatError { format: target })),
     };
-
     return Ok(());
 }
