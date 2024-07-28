@@ -19,16 +19,16 @@ impl Error for UnsupportedFormatError {}
 
 pub fn convert_image(file: String, target: String) -> Result<(), Box<dyn std::error::Error>> {
     let img = image::open(&file)?;
-    let new_path = utils::extract_file_name(file);
+    let new_path = utils::extract_file_name(&file);
     let new_file = format!("{}.{}", &new_path, target);
     match target.to_lowercase().as_str() {
         "jpg" | "jpeg" => {
-            img.save_with_format(new_file, image::ImageFormat::Jpeg)?;
-            println!("Image converted successfully!");
+            img.save_with_format(new_file.clone(), image::ImageFormat::Jpeg)?;
+            println!("'{}' successfully converted to '{}'!", &file, &new_file);
         },
         "png" => {
-            img.save_with_format(new_file, image::ImageFormat::Png)?;
-            println!("Image converted successfully!");
+            img.save_with_format(new_file.clone(), image::ImageFormat::Png)?;
+            println!("'{}' successfully converted to '{}'!", &file, &new_file);
         },
         _ => return Err(Box::new(UnsupportedFormatError { format: target })),
     };
