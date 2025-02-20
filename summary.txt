@@ -1,0 +1,264 @@
+// convert.rs
+use crate::file;
+use crate::my_image;
+use crate::utils;
+
+pub fn convert_file_type(args: &Vec<String>, from: file::FileType) -> () {
+    let filename = utils::get_filename(args);
+    match from {
+        file::FileType::IMAGE => {
+            let target_ext = my_image::get_target_ext(&args);
+            let err = my_image::convert_image(filename, target_ext).unwrap();
+            if err != () {
+                println!("There was an error converting your image: {:?}", err);
+                utils::print_usage();
+            } 
+        },
+        file::FileType::AUDIO => {
+            println!("Audio conversion not yet implemented.");
+        },
+        file::FileType::TEXT => {
+            println!("Text conversion not yet implemented.");
+        },
+        file::FileType::PDF => {
+            println!("PDF conversion not yet implemented.");
+        },
+        file::FileType::UNKNOWN => {
+            println!("Unknown file type detected.");
+        },
+    }
+}
+
+// file.rs
+pub fn extract_file_name(file: &String) -> String {
+    let idx = file.rfind(".").unwrap_or(file.len() - 1);
+    return file[..idx].to_string();
+}
+
+pub fn extract_file_ext(file: &String) -> String {
+    let idx = file.rfind(".").unwrap_or(file.len() - 1);
+    return file[idx + 1..].to_string();
+}
+
+#[derive(Debug)]
+pub enum FileType {
+    IMAGE,
+    TEXT,
+    AUDIO,
+    PDF,
+    UNKNOWN,
+}
+
+pub fn detect_file_type(file: &String) -> FileType {
+    let ext = extract_file_ext(file);
+    let image_exts: Vec<String> = {
+        vec!["jpeg", "jpg", "png"]
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect()
+    };
+    let audio_exts: Vec<String> = {
+        vec!["mp3", "wav", "m4a"]
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect()
+    };
+    let txt_exts: Vec<String> = {
+        vec!["txt", "md", "json", "yaml", "yml", "csv", "html"]
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect()
+    };
+    let result: FileType;
+    if image_exts.contains(&ext) {
+        result = FileType::IMAGE;
+    } 
+    else if audio_exts.contains(&ext) {
+        result = FileType::AUDIO;
+    }
+    else if txt_exts.contains(&ext) {
+        result = FileType::TEXT;
+    }
+    else if ext == "pdf" {
+        result = FileType::PDF;
+    }
+    else {
+        result = FileType::UNKNOWN;
+    }
+    return result;
+}
+
+// main.rs
+mod convert;
+mod my_image;
+mod utils;
+mod file;
+
+fn main() {
+    let args = utils::get_cl_args();
+    if args.len() > 2 {
+        let file_type = file::detect_file_type(&utils::get_filename(&args));
+        convert::convert_file_type(&args, file_type);
+    }
+    else if args.len() == 2 {
+        for arg in args {
+            if arg.starts_with("-") {
+                let val = utils::extract_flag_value(&arg);
+                if val == "help".to_string() {
+                    utils::print_usage();
+                    return;
+                }
+            }
+        }
+        utils::print_usage();
+        panic!("Invalid usage.");
+    }
+    else {
+        utils::print_usage();
+        panic!("Invalid usage.");
+    }
+}
+
+// my_image.rs
+extern crate image;
+
+use crate::file;
+use crate::utils;
+use std::fmt;
+use std::error::Error;
+
+#[derive(Debug)]
+struct UnsupportedFormatError {
+    format: String,
+}
+
+impl fmt::Display for UnsupportedFormatError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        return write!(f, "Unsupported target format: {}", self.format);
+    }
+}
+
+impl Error for UnsupportedFormatError {}
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum ImageExt {
+    PNG,
+    JPEG,
+    INVALID,
+}
+
+pub fn convert_image(file: String, target: ImageExt) -> Result<(), Box<dyn std::error::Error>> {
+    let img = image::open(&file)?;
+    let new_path = file::extract_file_name(&file);
+    let img_ext = match target {
+        ImageExt::PNG => "png".to_string(),
+        ImageExt::JPEG => "jpeg".to_string(),
+        ImageExt::INVALID => "".to_string(),
+    };
+    let new_file = format!("{}.{}", &new_path, img_ext);
+    match target {
+        ImageExt::JPEG => {
+            img.save_with_format(new_file.clone(), image::ImageFormat::Jpeg)?;
+            println!("'{}' successfully converted to '{}'!", &file, &new_file);
+        },
+        ImageExt::PNG => {
+            img.save_with_format(new_file.clone(), image::ImageFormat::Png)?;
+            println!("'{}' successfully converted to '{}'!", &file, &new_file);
+        },
+        _ => return Err(Box::new(UnsupportedFormatError { format: img_ext })),
+    };
+    return Ok(());
+}
+
+fn find_matching_value(val: &String) -> ImageExt {
+    return match val.as_str() {
+       "png" => ImageExt::PNG,
+       "jpeg" => ImageExt::JPEG,
+       "jpg" => ImageExt::JPEG,
+       &_ => ImageExt::INVALID,
+    };
+}
+
+pub fn get_target_ext(args: &Vec<String>) -> ImageExt {
+    let valid_exts: Vec<String> = {
+        vec!["png", "jpeg", "jpg"]
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect()
+    };
+    let mut result: ImageExt;
+    for arg in args {
+        if !arg.starts_with("-") { continue; }
+        let val = utils::extract_flag_value(arg);
+        if valid_exts.contains(&val) {
+            result = find_matching_value(&val);
+            if result != ImageExt::INVALID { return result; }
+        }
+    }
+    utils::print_usage();
+    panic!("Target extension not provided or used invalid format. Make sure to prefix with '-'.");
+}
+
+// utils.rs
+use std::env;
+use crate::file;
+
+pub fn get_cl_args() -> Vec<String> {
+    return env::args().map(|x| x.to_string()).collect::<Vec<String>>();
+}
+
+pub fn extract_flag_value(flag: &String) -> String {
+    let start = flag.chars().position(|x| x != '-').unwrap_or(0);
+    return flag[start..].to_string();
+}
+
+pub fn get_filename(args: &Vec<String>) -> String {
+    for arg in args {
+        if arg.starts_with("-") { continue; }
+        if arg.contains(".") {
+            if validate_filename(arg) {
+                return arg.to_string();
+            }
+        }
+    }
+    print_usage();
+    return "NO_MATCH".to_string();
+    // panic!("No valid files provided.");
+}
+
+fn validate_filename(arg: &String) -> bool {
+    let valid_exts: Vec<String> = {
+        vec![
+            "png",
+            "jpg",
+            "jpeg",
+            "txt",
+            "pdf",
+            "mp3",
+            "wav",
+            "m4a",
+            "html",
+            "md",
+            "json",
+            "yaml",
+            "yml",
+            "csv",
+        ].into_iter().map(|x| x.to_string()).collect()
+    };
+    if arg.contains(".") {
+        let ext = file::extract_file_ext(arg);
+        if valid_exts.contains(&ext) {
+            return true;
+        }    
+    }
+    return false;
+}
+
+pub fn print_usage() -> () {
+    println!("
+Usage: blconv <filename> -[target_ext]
+Valid file extensions include: 
+Image: jpeg, png
+Other formats coming soon!
+");
+}
