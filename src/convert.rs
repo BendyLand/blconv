@@ -1,5 +1,4 @@
 use crate::file;
-use crate::file::extract_file_name;
 use crate::my_image;
 use crate::utils;
 use crate::video;
@@ -19,7 +18,7 @@ pub fn convert_file_type(args: &Vec<String>, from: file::FileType) -> () {
             }
         },
         file::FileType::VIDEO => {
-            match utils::get_target_ext_string(&args) {
+            match utils::get_video_target_ext_string(&args) {
                 Ok(ext) => {
                     let base = file::extract_file_name(&filename);
                     let target = format!("{}.{}", base, &ext);

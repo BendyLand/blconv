@@ -52,7 +52,7 @@ fn validate_filename(arg: &String) -> bool {
     return false;
 }
 
-pub fn get_target_ext_string(args: &Vec<String>) -> Result<String, String> {
+pub fn get_video_target_ext_string(args: &Vec<String>) -> Result<String, String> {
     let valid_exts = vec!["webm", "mp4"];
     for arg in args {
         if !arg.starts_with("-") { continue; }
@@ -69,6 +69,7 @@ pub fn print_usage() -> () {
 Usage: blconv <filename> -[target_ext]
 Valid file extensions include: 
 Image: jpeg, png
+Video: webm, mp4
 Other formats coming soon!
 ");
 }
