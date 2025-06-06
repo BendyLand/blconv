@@ -3,6 +3,9 @@ name = "blconv"
 version = "0.1.0"
 edition = "2021"
 
+[build-dependencies]
+cc = "1.2.25"
+
 [dependencies]
 ffmpeg-next = "7.0.4"
 image = "0.25.2"

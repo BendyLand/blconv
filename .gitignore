@@ -1,1 +1,10 @@
 /target
+lashfile
+*.mp3
+*.mp4
+*.webm
+*.jpg
+*.jpeg
+*.png
+summary.txt
+

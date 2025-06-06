@@ -10,18 +10,16 @@ pub fn extract_flag_value(flag: &String) -> String {
     return flag[start..].to_string();
 }
 
-pub fn get_filename(args: &Vec<String>) -> String {
+pub fn get_filename(args: &Vec<String>) -> Option<String> {
     for arg in args {
         if arg.starts_with("-") { continue; }
         if arg.contains(".") {
             if validate_filename(arg) {
-                return arg.to_string();
+                return Some(arg.to_string());
             }
         }
     }
-    print_usage();
-    return "NO_MATCH".to_string();
-    // panic!("No valid files provided.");
+    return None;
 }
 
 fn validate_filename(arg: &String) -> bool {
@@ -41,6 +39,8 @@ fn validate_filename(arg: &String) -> bool {
             "yaml",
             "yml",
             "csv",
+            "webm",
+            "mp4",
         ].into_iter().map(|x| x.to_string()).collect()
     };
     if arg.contains(".") {
@@ -50,6 +50,18 @@ fn validate_filename(arg: &String) -> bool {
         }    
     }
     return false;
+}
+
+pub fn get_target_ext_string(args: &Vec<String>) -> Result<String, String> {
+    let valid_exts = vec!["webm", "mp4"];
+    for arg in args {
+        if !arg.starts_with("-") { continue; }
+        let val = extract_flag_value(arg);
+        if valid_exts.contains(&val.as_str()) {
+            return Ok(val);
+        }
+    }
+    return Err("Target extension not provided or invalid. Use `-webm` or `-mp4`.".to_string());
 }
 
 pub fn print_usage() -> () {

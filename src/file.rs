@@ -5,7 +5,8 @@ pub fn extract_file_name(file: &String) -> String {
 
 pub fn extract_file_ext(file: &String) -> String {
     let idx = file.rfind(".").unwrap_or(file.len() - 1);
-    return file[idx + 1..].to_string();
+    let result = file[idx + 1..].to_string();
+    return result;
 }
 
 #[derive(Debug)]
@@ -14,6 +15,7 @@ pub enum FileType {
     TEXT,
     AUDIO,
     PDF,
+    VIDEO,
     UNKNOWN,
 }
 
@@ -37,21 +39,18 @@ pub fn detect_file_type(file: &String) -> FileType {
             .map(|x| x.to_string())
             .collect()
     };
+    let video_exts: Vec<String> = {
+        vec!["webm", "mp4"]
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect()
+    };
     let result: FileType;
-    if image_exts.contains(&ext) {
-        result = FileType::IMAGE;
-    } 
-    else if audio_exts.contains(&ext) {
-        result = FileType::AUDIO;
-    }
-    else if txt_exts.contains(&ext) {
-        result = FileType::TEXT;
-    }
-    else if ext == "pdf" {
-        result = FileType::PDF;
-    }
-    else {
-        result = FileType::UNKNOWN;
-    }
+    if image_exts.contains(&ext) { result = FileType::IMAGE; } 
+    else if audio_exts.contains(&ext) { result = FileType::AUDIO; }
+    else if txt_exts.contains(&ext) { result = FileType::TEXT; }
+    else if video_exts.contains(&ext) { result = FileType::VIDEO; }
+    else if ext == "pdf" { result = FileType::PDF; }
+    else { result = FileType::UNKNOWN; }
     return result;
 }

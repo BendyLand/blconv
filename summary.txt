@@ -7,12 +7,15 @@ pub fn convert_file_type(args: &Vec<String>, from: file::FileType) -> () {
     let filename = utils::get_filename(args);
     match from {
         file::FileType::IMAGE => {
-            let target_ext = my_image::get_target_ext(&args);
-            let err = my_image::convert_image(filename, target_ext).unwrap();
-            if err != () {
-                println!("There was an error converting your image: {:?}", err);
-                utils::print_usage();
-            } 
+            match my_image::get_target_ext(&args) {
+                Ok(target_ext) => {
+                    match my_image::convert_image(filename, target_ext) {
+                        Ok(_) => {},
+                        Err(e) => println!("Error: {}", e),
+                    };
+                },
+                Err(e) => println!("{}", e),
+            }
         },
         file::FileType::AUDIO => {
             println!("Audio conversion not yet implemented.");
@@ -179,24 +182,16 @@ fn find_matching_value(val: &String) -> ImageExt {
     };
 }
 
-pub fn get_target_ext(args: &Vec<String>) -> ImageExt {
-    let valid_exts: Vec<String> = {
-        vec!["png", "jpeg", "jpg"]
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect()
-    };
-    let mut result: ImageExt;
+pub fn get_target_ext(args: &Vec<String>) -> Result<ImageExt, String> {
+    let valid_exts = vec!["png", "jpeg", "jpg"];
     for arg in args {
         if !arg.starts_with("-") { continue; }
         let val = utils::extract_flag_value(arg);
-        if valid_exts.contains(&val) {
-            result = find_matching_value(&val);
-            if result != ImageExt::INVALID { return result; }
+        if valid_exts.contains(&val.as_str()) {
+            return Ok(find_matching_value(&val));
         }
     }
-    utils::print_usage();
-    panic!("Target extension not provided or used invalid format. Make sure to prefix with '-'.");
+    return Err("Target extension not provided or invalid. Use `-png`, `-jpeg`, or `-jpg`.".to_string());
 }
 
 // utils.rs

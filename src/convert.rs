@@ -1,9 +1,11 @@
 use crate::file;
+use crate::file::extract_file_name;
 use crate::my_image;
 use crate::utils;
+use crate::video;
 
 pub fn convert_file_type(args: &Vec<String>, from: file::FileType) -> () {
-    let filename = utils::get_filename(args);
+    let filename = utils::get_filename(args).unwrap_or("NOT_FOUND".to_string());
     match from {
         file::FileType::IMAGE => {
             match my_image::get_target_ext(&args) {
@@ -14,6 +16,18 @@ pub fn convert_file_type(args: &Vec<String>, from: file::FileType) -> () {
                     };
                 },
                 Err(e) => println!("{}", e),
+            }
+        },
+        file::FileType::VIDEO => {
+            match utils::get_target_ext_string(&args) {
+                Ok(ext) => {
+                    let base = file::extract_file_name(&filename);
+                    let target = format!("{}.{}", base, &ext);
+                    if let Err(e) = video::convert_video_rust(&filename, &target) {
+                        eprintln!("Error: {}", e);
+                    }
+                }
+                Err(e) => eprintln!("Error: {}", &e),
             }
         },
         file::FileType::AUDIO => {
